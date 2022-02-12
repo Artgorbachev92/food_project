@@ -189,29 +189,56 @@ window.addEventListener('DOMContentLoaded', () => {
 
     }
 
-    new MenuCard('img/tabs/vegy.jpg',
-        'vegy',
-        'Меню "Фитнес"',
-        'Меню "Фитнес" - это новый подход к приготовлению блюд: больше свежих овощей и фруктов. Продукт активных и здоровых людей. Это абсолютно новый продукт с оптимальной ценой и высоким качеством!',
-        9,
-        ".menu .container"
-    ).render();
+    const getResourses = async (url) => { // async говорит о том, что внутри функции будет асинхронный код
+        const res = await fetch(url);
 
-    new MenuCard('img/tabs/elite.jpg',
-        'elite',
-        'Меню “Премиум”',
-        'В меню “Премиум” мы используем не только красивый дизайн упаковки, но и качественное исполнение блюд. Красная рыба, морепродукты, фрукты - ресторанное меню без похода в ресторан!',
-        14,
-        ".menu .container"
-    ).render();
+        if (!res.ok) {
+            throw new Error(`Could not fetch ${url}: status: ${res.status}`);
+        }
 
-    new MenuCard('img/tabs/post.jpg',
-        'post',
-        'Меню "Постное"',
-        'Меню “Постное” - это тщательный подбор ингредиентов: полное отсутствие продуктов животного происхождения, молоко из миндаля, овса, кокоса или гречки, правильное количество белков за счет тофу и импортных вегетарианских стейков',
-        21,
-        ".menu .container"
-    ).render();
+        return await res.json();
+    };
+
+    // ПЕРВЫЙ ВАРИАНТ ЗАПРОСА
+
+    // getResourses('http://localhost:3000/menu')
+    // .then(data => {
+    //     data.forEach(({img, altimg, title, descr, price}) => {
+    //         new MenuCard(img, altimg, title, descr, price,".menu .container").render();
+    //     });
+    // });
+
+    //ВТОРОЙ ВАРИАНТ
+
+    getResourses('http://localhost:3000/menu')
+        .then(data => createCard(data));
+
+    function createCard(data) {
+        data.forEach(({
+            img,
+            altimg,
+            title,
+            descr,
+            price
+        }) => {
+            const element = document.createElement('div');
+            element.classList.add('menu__item');
+
+            element.innerHTML = `
+            <img src=${img} alt= ${altimg}>
+            <h3 class="menu__item-subtitle">${title}"</h3>
+            <div class="menu__item-descr">${descr}</div>
+            <div class="menu__item-divider"></div>
+            <div class="menu__item-price">
+                <div class="menu__item-cost">Цена:</div>
+                <div class="menu__item-total"><span>${price}</span> грн/день</div>
+            </div>
+            `;
+
+            const container = document.querySelector('.menu .container').append(element);
+        });
+    }
+
 
     // AJAX и общение с сервером
 
@@ -224,8 +251,23 @@ window.addEventListener('DOMContentLoaded', () => {
     };
 
     forms.forEach(item => {
-        postData(item);
+        bindPostData(item);
     });
+
+    const postData = async (url, data) => { // async говорит о том, что внутри функции будет асинхронный код
+        const res = await fetch(url, { //ждет результата запроса и когда результат вернется await пропустит код дальше
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: data
+        });
+
+        return await res.json();
+    };
+
+
+
 
     // ПЕРЕДАЧА ДАННЫХ В ПРОСТОМ ФОРМАТЕ
 
@@ -267,7 +309,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // ПЕРЕДАЧА ДАННЫХ  В ФОРМАТЕ JSON С ИСПОЛЬЗОВАНИЕМ XMLHTTPREQUEST
 
-    // function postData(form) {
+    // function bindPostData(form) {
     //     form.addEventListener('submit', (e) => {
     //         e.preventDefault();
 
@@ -333,8 +375,8 @@ window.addEventListener('DOMContentLoaded', () => {
             prevModalDialog.classList.add('show');
             prevModalDialog.classList.remove('hide');
             closeModal();
-        }, 3000);
-    }
+        }, 4000);
+    };
 
     // FETCH. ПЕРЕДАЧА ДАННЫХ С ИСПОЛЬЗОВАНИЕМ FETCH и FORMDATA
 
@@ -352,9 +394,7 @@ window.addEventListener('DOMContentLoaded', () => {
     //     .then(response => response.json())
     //     .then(json => console.log(json));
 
-
-
-    function postData(form) {
+    function bindPostData(form) {
         form.addEventListener('submit', (e) => {
             e.preventDefault();
 
@@ -369,46 +409,37 @@ window.addEventListener('DOMContentLoaded', () => {
 
             const formData = new FormData(form);
 
-            const object = {};
+            //Преобразование FormData в JSON примитивное
+            // const object = {};
+            // formData.forEach(function (value, key) {
+            //     object[key] = value;
+            // }); 
 
-            formData.forEach(function (value, key) {
-                object[key] = value;
-            });
+            //Другой способ преобразовать formData в JSON  
+            const json = JSON.stringify(Object.fromEntries(formData.entries()));
 
 
-            fetch('server.php', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json' },
-                body:  JSON.stringify(object) // Либо в формате formData 
-            })
-            .then(data => data.text())
-            .then(data => {
-                console.log(data);
-                showThanksModal(message.success);
-                statusMessage.remove();
-            })
-            .catch(() => {
-                showThanksModal(message.failure);
-            })
-            .finally(() => {
-                form.reset();
-            });
+            postData('http://localhost:3000/requests', json)
+                .then(data => {
+                    console.log(data);
+                    showThanksModal(message.success);
+                    statusMessage.remove();
+                })
+                .catch(() => {
+                    showThanksModal(message.failure);
+                })
+                .finally(() => {
+                    form.reset();
+                });
 
-            // request.addEventListener('load', () => {
-            //     if (request.status === 200) {
-            //         console.log(request.response);
-            //         showThanksModal(message.success);
-            //         form.reset()
-            //         statusMessage.remove();
-            //     } else {
-            //         showThanksModal(message.failure);
-            //     }
-            // });
         });
     }
 
 
+    //ПОЛУЧЕНИЕ ДАННЫХ ИЗ БАЗЫ ДАННЫХ DB.JSON
 
-
+    // fetch("http://localhost:3000/menu")
+    // .then((data) =>  data.json())
+    // .then(res => console.log(res));
 
 });

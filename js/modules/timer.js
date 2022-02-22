@@ -1,6 +1,6 @@
-function timer() {
+function timer(id, deadline) {
+    
 //TIMER
-const deadline = '2022-04-08';
 const element = document.querySelector('.promotion__descr');
 element.insertAdjacentHTML('beforeend', `Акция закончится ${deadline} в 00:00`);
 
@@ -53,7 +53,8 @@ function setClock(selector, endtime) {
     }
 }
 
-setClock('.timer', deadline);
+setClock(id, deadline);
 }
 
-module.exports = timer;
+// module.exports = timer;
+export default timer;

@@ -184,7 +184,12 @@ function slider({container, slide, nextArrow, prevArrow, totalCounter, currentCo
     // next.addEventListener('click', () => {
     //     plusSlides(+1); 
     // });
+
+
 }
 
 // module.exports = slider;
+
+
+
 export default slider;
